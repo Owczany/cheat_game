@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntEnum
 
 class Suit(Enum):
     HEARTS = "Hearts"
@@ -6,7 +6,7 @@ class Suit(Enum):
     CLUBS = "Clubs"
     SPADES = "Spades"
 
-class Rank(Enum):
+class Rank(IntEnum):
     TWO = 2
     THREE = 3
     FOUR = 4
@@ -16,10 +16,10 @@ class Rank(Enum):
     EIGHT = 8
     NINE = 9
     TEN = 10
-    JACK = "Jack"
-    QUEEN = "Queen"
-    KING = "King"
-    ACE = "Ace"
+    JACK = 11
+    QUEEN = 12
+    KING = 13
+    ACE = 14
 
 class Card:
     def __init__(self, suit: Suit, rank: Rank):

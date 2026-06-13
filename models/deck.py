@@ -42,5 +42,8 @@ class Deck:
                     hands[player].append(self.draw())
         return hands
     
+    def get_card_count(self) -> int:
+        return len(self.cards)
+    
     def __str__(self):
         return f"{"\n".join(str(card) for card in self.cards)}\nDeck of {len(self.cards)} cards"

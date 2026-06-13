@@ -13,6 +13,16 @@ class Player:
     def receive_card(self, card: Card):
         self.hand.append(card)
 
+    def discard_card(self, card: Card):
+        if card in self.hand:
+            self.hand.remove(card)
+        else:
+            print(f"{self.name} does not have {card} in hand!")
+
+    def discard_cards(self, cards: List[Card]):
+        for card in cards:
+            self.discard_card(card)
+
     def __eq__(self, other):
         if not isinstance(other, Player):
             return False
