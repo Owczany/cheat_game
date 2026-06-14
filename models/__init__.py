@@ -3,4 +3,4 @@ from .deck import Deck
 from .player import Player
 from .table_pile import TablePile
 
-_all__ = [Card, Suit, Rank, Deck, Player, TablePile]
+__all__ = ["Card", "Suit", "Rank", "Deck", "Player", "TablePile"]

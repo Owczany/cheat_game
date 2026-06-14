@@ -9,7 +9,7 @@ class Move():
         self.claimed_rank: Rank = claimed_rank
 
     def is_bluff(self) -> bool:
-        return any(card.rank <= self.claimed_rank for card in self.cards)
+        return any(card.rank != self.claimed_rank for card in self.cards)
     
     def get_card_count(self) -> int:
         return len(self.cards)
