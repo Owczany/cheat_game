@@ -9,7 +9,6 @@ from models import Card, Player, Rank
 class PassiveAgent(Agent):
     def __init__(self, player: Player):
         super().__init__(player)
-        self.played_cards: List[Card] = []
 
     def choose_cards_to_play(self, game: Game) -> tuple[List[Card], Rank]:
         if not self.player.hand:
@@ -33,12 +32,6 @@ class PassiveAgent(Agent):
 
         known_count = self._known_rank_count(game.last_move.claimed_rank)
         return game.last_move.get_card_count() + known_count > 4
-
-    def remember_played_cards(self, cards: List[Card]) -> None:
-        self.played_cards.extend(cards)
-
-    def on_challenge_resolved(self) -> None:
-        self.played_cards.clear()
 
     def _known_rank_count(self, rank: Rank) -> int:
         known_cards = self.player.hand + self.played_cards

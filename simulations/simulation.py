@@ -2,8 +2,9 @@ from contextlib import nullcontext, redirect_stdout
 from dataclasses import dataclass
 from io import StringIO
 
-from agents import Agent
+from agents import ActionResult, Agent
 from game.game import Game, GameState
+from game.results import PlayCardsResult
 from models import Player
 
 
@@ -86,13 +87,12 @@ class Simulation:
 
             output_context = nullcontext() if should_show_gameplay else redirect_stdout(StringIO())
             with output_context:
-                agent.act(game)
+                action_result = agent.act(game)
 
-            if self.was_challenge_resolved(state_before_action, game):
-                self.notify_challenge_resolved(agents)
+            self.notify_action_observed(agents, action_result)
 
             if should_show_gameplay:
-                self.print_step(step, state_before_action, player_before_action, game)
+                self.print_step(step, state_before_action, player_before_action, action_result)
 
         if should_show_gameplay:
             print(f"Simulation stopped after {self.max_steps} steps")
@@ -120,28 +120,25 @@ class Simulation:
         for player in self.players:
             player.hand.clear()
 
-    def was_challenge_resolved(self, state_before_action: GameState, game: Game) -> bool:
-        return (
-            state_before_action == GameState.WAITING_FOR_CHALLENGE
-            and game.table_pile.is_empty()
-            and game.current_claimed_rank is None
-        )
-
-    def notify_challenge_resolved(self, agents: list[Agent]) -> None:
+    def notify_action_observed(self, agents: list[Agent], action_result: ActionResult) -> None:
         for agent in agents:
-            agent.on_challenge_resolved()
+            if agent.player != action_result.player:
+                agent.observe_action(action_result)
 
     def print_step(
         self,
         step: int,
         state_before_action: GameState,
         player_before_action: Player,
-        game: Game,
+        action_result: ActionResult,
     ) -> None:
-        if state_before_action == GameState.WAITING_FOR_MOVE and game.last_move:
+        if (
+            state_before_action == GameState.WAITING_FOR_MOVE
+            and isinstance(action_result.game_result, PlayCardsResult)
+        ):
             print(
                 f"{step}. {player_before_action.name} played "
-                f"{game.last_move.get_card_count()} card(s) as {game.last_move.claimed_rank.name}"
+                f"{len(action_result.game_result.cards)} card(s) as {action_result.game_result.claimed_rank.name}"
             )
             return
 

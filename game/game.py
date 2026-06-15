@@ -4,6 +4,7 @@ from models.card import Card, Rank
 from models.table_pile import TablePile
 from enum import Enum
 from .move import Move
+from .results import ChallengeResult, PassChallengeResult, PlayCardsResult
 from typing import List
 
 class GameState(Enum):
@@ -111,7 +112,7 @@ class Game:
         self.game_state = GameState.FINISHED
         return len(player.hand) == 0
     
-    def play_cards(self, player: Player, cards: List[Card], claimed_rank: Rank):
+    def play_cards(self, player: Player, cards: List[Card], claimed_rank: Rank) -> PlayCardsResult:
         self._validate_game_state(GameState.WAITING_FOR_MOVE)
         self._validate_player_in_game(player)
         self._validate_cards_not_empty(cards)
@@ -125,35 +126,56 @@ class Game:
         self.table_pile.add_cards(cards)
         self.next_turn()
         self.state = GameState.WAITING_FOR_CHALLENGE
+        return PlayCardsResult(
+            player=player,
+            cards=tuple(cards),
+            claimed_rank=claimed_rank,
+            next_player=self.current_player,
+        )
 
-    def pass_challenge(self, player: Player) -> None:
+    def pass_challenge(self, player: Player) -> PassChallengeResult:
         self._validate_game_state(GameState.WAITING_FOR_CHALLENGE)
         self._validate_player_in_game(player)
         self._validate_player_turn(player)
         self.last_move = None
         self.state = GameState.WAITING_FOR_MOVE
+        return PassChallengeResult(
+            player=player,
+            next_player=self.current_player,
+        )
     
-    def challenge(self, player: Player) -> bool:
+    def challenge(self, player: Player) -> ChallengeResult:
         self._validate_game_state(GameState.WAITING_FOR_CHALLENGE)
         self._validate_player_in_game(player)
         self._validate_player_turn(player)
         self._validate_has_last_move()
         
         is_bluff = self.last_move.is_bluff()
+        challenged_player = self.last_move.player
+        cards_taken = tuple(self.table_pile.cards)
         
         if is_bluff:
             print(f"{player.name} successfully challenged {self.last_move.player.name}'s bluff!")
-            self.last_move.player.hand.extend(self.table_pile.cards)
+            pile_receiver = self.last_move.player
+            pile_receiver.hand.extend(self.table_pile.cards)
         else:
             print(f"{player.name} failed to challenge {self.last_move.player.name}'s move.")
-            player.hand.extend(self.table_pile.cards)
+            pile_receiver = player
+            pile_receiver.hand.extend(self.table_pile.cards)
 
         self.table_pile.clear()
         self.last_move = None
         self.current_claimed_rank = None
         self.state = GameState.WAITING_FOR_MOVE
 
-        return is_bluff
+        return ChallengeResult(
+            challenger=player,
+            challenged_player=challenged_player,
+            was_bluff=is_bluff,
+            pile_receiver=pile_receiver,
+            cards_taken=cards_taken,
+            next_player=self.current_player,
+        )
     
     def get_number_of_players(self) -> int:
         return len(self.players)

@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Any, List
 
+from agents.actions import ActionResult, ActionType
 from game.game import Game, GameState
+from game.results import ChallengeResult, PlayCardsResult
 from models import Card, Player, Rank
 
 
@@ -9,6 +11,7 @@ class Agent(ABC):
     def __init__(self, player: Player):
         self.player = player
         self.observations: List[dict[str, Any]] = []
+        self.played_cards: List[Card] = []
 
     def observe(self, game: Game) -> dict[str, Any]:
         snapshot = {
@@ -36,26 +39,37 @@ class Agent(ABC):
         pass
 
     def remember_played_cards(self, cards: List[Card]) -> None:
-        pass
+        self.played_cards.extend(cards)
 
     def on_challenge_resolved(self) -> None:
-        pass
+        self.played_cards.clear()
 
-    def act(self, game: Game) -> None:
+    def observe_action(self, action_result: ActionResult) -> None:
+        if isinstance(action_result.game_result, PlayCardsResult) and action_result.player == self.player:
+            self.remember_played_cards(list(action_result.game_result.cards))
+
+        if isinstance(action_result.game_result, ChallengeResult):
+            self.on_challenge_resolved()
+
+    def act(self, game: Game) -> ActionResult:
         self.observe(game)
 
         if game.state == GameState.WAITING_FOR_MOVE:
             cards, claimed_rank = self.choose_cards_to_play(game)
-            game.play_cards(self.player, cards, claimed_rank)
-            self.remember_played_cards(cards)
-            return
+            game_result = game.play_cards(self.player, cards, claimed_rank)
+            action_result = ActionResult(self.player, ActionType.PLAY_CARDS, game_result)
+            self.observe_action(action_result)
+            return action_result
 
         if game.state == GameState.WAITING_FOR_CHALLENGE:
             if self.should_challenge(game):
-                game.challenge(self.player)
-                self.on_challenge_resolved()
+                game_result = game.challenge(self.player)
+                action_result = ActionResult(self.player, ActionType.CHALLENGE, game_result)
             else:
-                game.pass_challenge(self.player)
-            return
+                game_result = game.pass_challenge(self.player)
+                action_result = ActionResult(self.player, ActionType.PASS_CHALLENGE, game_result)
+
+            self.observe_action(action_result)
+            return action_result
 
         raise ValueError(f"Agent cannot act while game is in state {game.state}")
