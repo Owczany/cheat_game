@@ -1,0 +1,26 @@
+name: Autonomous Tests
+
+on: [push]
+
+jobs:
+  testy:
+    runs-on: unbuntu-latest
+
+    steps:
+      # Krok A: Pobierz nasz kod z repozytorium na ten wirtualny serwer
+      - name: Pobierz kod
+        uses: actions/checkout@v4
+
+      # Krok B: Zainstaluj Pythona na tym wirtualnym serwerze
+      - name: Przygotuj Pythona
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Krok C: Zainstaluj potrzebne nam biblioteki (np. narzędzie do testów)
+      - name: Zainstaluj zależności
+        run: pip install pytest
+
+      # Krok D: Uruchom testy! To moment prawdy.
+      - name: Uruchom testy
+        run: pytest
