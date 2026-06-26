@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   testy:
-    runs-on: unbuntu-latest
+    runs-on: ubuntu-latest
 
     steps:
       # Krok A: Pobierz nasz kod z repozytorium na ten wirtualny serwer
